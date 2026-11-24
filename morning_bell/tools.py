@@ -99,9 +99,10 @@ TOOL_SCHEMAS = [
         "function": {
             "name": "send_daily_report",
             "description": (
-                "Send the user ONE daily email report summarizing ALL emails returned by search_emails. Call it last, "
-                "exactly once, after creating calendar events. Every email id from search_emails must appear once in "
-                "'emails'."
+                "Send the user ONE daily email report. Call it last, exactly once, after creating calendar events. "
+                "In 'emails', summarize every email that matters (primary tab, important, personal, college/work, "
+                "finance, travel, security). Promotions, social and newsletter emails may be left out - they are "
+                "listed automatically by sender and subject. Keep every summary short."
             ),
             "parameters": {
                 "type": "object",
@@ -136,7 +137,7 @@ TOOL_SCHEMAS = [
                     },
                     "emails": {
                         "type": "array",
-                        "description": "One entry per email from search_emails.",
+                        "description": "One entry per email that matters (others are listed automatically).",
                         "items": {
                             "type": "object",
                             "properties": {
@@ -169,7 +170,7 @@ class ToolBox:
         self.tz = ZoneInfo(config.TIMEZONE)
         self.log: list[str] = []
         self.calendar_items = 0  # events created (or found already on calendar) this run
-        self.found_ids: list[str] = []  # emails returned by search_emails this run
+        self.found: dict[str, dict] = {}  # emails returned by search_emails this run, by id
 
     # 1
     def search_emails(self, extra_query: str = "") -> dict:
@@ -181,8 +182,7 @@ class ToolBox:
             query += f" ({extra_query})"
         emails = self.backend.search_emails(query, config.MAX_EMAILS)
         for e in emails:
-            if e["id"] not in self.found_ids:
-                self.found_ids.append(e["id"])
+            self.found[e["id"]] = e
         return {"count": len(emails), "limit": config.MAX_EMAILS, "emails": emails}
 
     # 2
@@ -246,13 +246,21 @@ class ToolBox:
                 "error": f"{claimed} items are marked added_to_calendar, but only {self.calendar_items} events "
                          "were created with create_calendar_event. Create them first, then send the report."
             }
+        # Emails the AI didn't summarize are listed by sender + subject under their Gmail tab.
         covered = {e.get("id") for e in emails}
-        missing = [i for i in self.found_ids if i not in covered]
-        if missing and len(missing) > max(1, len(self.found_ids) // 10):
-            return {
-                "error": f"The report is missing {len(missing)} of the {len(self.found_ids)} emails. Add one entry "
-                         f"for each of these ids, then call send_daily_report again: {missing[:40]}"
-            }
+        tab_category = {"promotions": "promotions", "social": "social", "forums": "newsletters", "updates": "other"}
+        auto = 0
+        for mid, meta in self.found.items():
+            if mid in covered:
+                continue
+            sender = str(meta.get("from", "")).split("<")[0].strip().strip('"') or meta.get("from", "")
+            emails.append({
+                "id": mid, "from": sender,
+                "category": "important" if meta.get("important") and meta.get("gmail_tab") in ("", "primary")
+                            else tab_category.get(meta.get("gmail_tab", ""), "other"),
+                "summary": meta.get("subject") or meta.get("snippet", "")[:100],
+            })
+            auto += 1
 
         esc = lambda t: _html.escape(str(t or ""))  # noqa: E731
         groups: dict[str, list[dict]] = {}
@@ -291,7 +299,18 @@ class ToolBox:
         today = datetime.now(self.tz).strftime("%A, %d %B")
         result = self.backend.send_email(f"🔔 Morning Bell — Daily mail report, {today}", "".join(parts))
         self.log.append(f"Report sent: {headline}")
-        return {"status": "sent", **result}
+        return {"status": "sent", "auto_listed_emails": auto, **result}
+
+    def send_fallback_report(self, reason: str) -> dict:
+        """Used by the agent loop if the AI fails, so the user still gets a report."""
+        if not self.found:
+            self.search_emails()
+        return self.send_daily_report(
+            headline=f"{len(self.found)} emails in the last 24 hours",
+            overview=f"The AI summary could not be completed today ({reason}), so your emails are listed by "
+                     "sender and subject. Calendar events created before the problem are still saved.",
+            emails=[],
+        )
 
     # ---------- helpers ----------
     def _parse(self, value: str) -> datetime:

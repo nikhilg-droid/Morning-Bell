@@ -40,3 +40,5 @@ CREDENTIALS_FILE = ROOT / "credentials.json"   # OAuth client downloaded from Go
 TOKEN_FILE = ROOT / "token.json"               # created after first login
 
 MAX_AGENT_STEPS = int(os.environ.get("MAX_AGENT_STEPS", "25"))
+# Sarvam's default reply limit is only 2048 tokens - too small for a full report.
+MAX_OUTPUT_TOKENS = int(os.environ.get("MAX_OUTPUT_TOKENS", "16000"))

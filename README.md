@@ -28,7 +28,8 @@ runs on **Sarvam AI** (`sarvam-105b`) with tool calling.
 The agent loop (`morning_bell/agent.py`) sends the conversation and tool list to Sarvam; the model
 picks tools, the code runs them and returns the results, and this repeats until the digest is sent.
 Guards: the report tool refuses to send if it leaves out emails, or claims events were added that
-`create_calendar_event` didn't really create, tool errors are passed back to the model so it can recover, and runs are capped at 25 steps.
+`create_calendar_event` didn't really create, tool errors are passed back to the model so it can recover, replies that get cut off are retried shorter,
+and if the AI still can't finish, a basic report listing every email by sender and subject is sent anyway.
 
 ## Project layout
 
@@ -114,6 +115,7 @@ start in `C:\path\to\morning-bell`.
 | `SARVAM_MODEL` | `sarvam-105b` | Sarvam chat model |
 | `MAIL_QUERY` | (empty = all mail) | Extra Gmail search to narrow the report |
 | `MAX_EMAILS` | `60` | Max emails per report |
+| `MAX_OUTPUT_TOKENS` | `16000` | Longest reply the AI may write (Sarvam's default of 2048 is too small for a report) |
 | `LOOKBACK_HOURS` | `24` | How far back to look |
 | `TIMEZONE` | `Asia/Kolkata` | Used to resolve "tomorrow 3 PM" etc. |
 | `CALENDAR_ID` | `primary` | Which Google Calendar to write to |
