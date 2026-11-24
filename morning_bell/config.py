@@ -26,7 +26,7 @@ SARVAM_MODEL = os.environ.get("SARVAM_MODEL", "sarvam-105b")
 
 # --- Gmail / Calendar ---
 # Gmail search used to find college mail, e.g. "from:(@mycollege.edu.in)" or "label:college"
-COLLEGE_QUERY = os.environ.get("COLLEGE_QUERY", "from:(@college.edu)")
+COLLEGE_QUERY = os.environ.get("COLLEGE_QUERY") or "(exam OR exams OR class OR lecture OR lab OR quiz OR assignment OR deadline OR timetable OR schedule OR rescheduled OR cancelled OR viva OR seminar OR submission OR semester)"
 LOOKBACK_HOURS = int(os.environ.get("LOOKBACK_HOURS", "24"))
 TIMEZONE = os.environ.get("TIMEZONE", "Asia/Kolkata")
 CALENDAR_ID = os.environ.get("CALENDAR_ID", "primary")

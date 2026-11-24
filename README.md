@@ -58,8 +58,10 @@ cp .env.example .env           # Windows Command Prompt: copy .env.example .env
 ```
 Then open `.env` in a text editor (Windows: `notepad .env`).
 
-Put your Sarvam key in `.env` (`SARVAM_API_KEY=...`, from https://dashboard.sarvam.ai) and set
-`COLLEGE_QUERY` to match your college, e.g. `from:(@nitk.edu.in)` or `label:college`.
+Put your Sarvam key in `.env` (`SARVAM_API_KEY=...`, from https://dashboard.sarvam.ai).
+`COLLEGE_QUERY` is a normal Gmail search. The default finds any email that mentions exams, classes,
+labs, deadlines and so on, so you don't need a college email domain. You can narrow it later, e.g.
+`from:(teacher@gmail.com)` or `label:college`.
 
 ## 2. Try it without Google (demo mode)
 
@@ -110,7 +112,7 @@ start in `C:\path\to\morning-bell`.
 |---|---|---|
 | `SARVAM_API_KEY` | – | Sarvam AI key (required) |
 | `SARVAM_MODEL` | `sarvam-105b` | Sarvam chat model |
-| `COLLEGE_QUERY` | `from:(@college.edu)` | Gmail search that matches college mail |
+| `COLLEGE_QUERY` | schedule keywords | Gmail search for which emails to check |
 | `LOOKBACK_HOURS` | `24` | How far back to look |
 | `TIMEZONE` | `Asia/Kolkata` | Used to resolve "tomorrow 3 PM" etc. |
 | `CALENDAR_ID` | `primary` | Which Google Calendar to write to |
