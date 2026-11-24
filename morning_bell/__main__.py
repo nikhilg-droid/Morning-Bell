@@ -14,7 +14,7 @@ def main() -> None:
             stream.reconfigure(encoding="utf-8", errors="replace")
         except Exception:
             pass
-    parser = argparse.ArgumentParser(prog="morning_bell", description="Turn college email into calendar alerts.")
+    parser = argparse.ArgumentParser(prog="morning_bell", description="Daily Gmail report + calendar alerts.")
     parser.add_argument("--demo", action="store_true", help="use sample emails; don't touch Google")
     parser.add_argument("--quiet", action="store_true", help="don't print each tool call")
     args = parser.parse_args()
@@ -26,7 +26,7 @@ def main() -> None:
         from .google_backend import GoogleBackend
         backend = GoogleBackend()
 
-    print("🔔 Morning Bell is checking your college email...\n")
+    print("🔔 Morning Bell is reading your email from the last 24 hours...\n")
     summary = agent.run(backend, verbose=not args.quiet)
     print("\n" + summary)
 
@@ -36,7 +36,7 @@ def main() -> None:
             alerts = [r["minutes"] for r in ev["reminders"]["overrides"]]
             print(f"  • {ev['start']['dateTime'][:16]}  {ev['summary']}  [{ev['location'] or '-'}]  alerts(min before)={alerts}")
         if backend.sent:
-            print("\n📧 Digest written to demo_digest.html")
+            print("\n📧 Report written to demo_digest.html")
 
 
 if __name__ == "__main__":

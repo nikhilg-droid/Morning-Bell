@@ -25,8 +25,10 @@ SARVAM_BASE_URL = os.environ.get("SARVAM_BASE_URL", "https://api.sarvam.ai/v1")
 SARVAM_MODEL = os.environ.get("SARVAM_MODEL", "sarvam-105b")
 
 # --- Gmail / Calendar ---
-# Gmail search used to find college mail, e.g. "from:(@mycollege.edu.in)" or "label:college"
-COLLEGE_QUERY = os.environ.get("COLLEGE_QUERY") or "(exam OR exams OR class OR lecture OR lab OR quiz OR assignment OR deadline OR timetable OR schedule OR rescheduled OR cancelled OR viva OR seminar OR submission OR semester)"
+# Optional extra Gmail search to narrow which emails go in the report, e.g. "-category:promotions".
+# Empty = every email received in the last LOOKBACK_HOURS (spam, trash, sent and chats are excluded).
+MAIL_QUERY = os.environ.get("MAIL_QUERY", "")
+MAX_EMAILS = int(os.environ.get("MAX_EMAILS", "60"))
 LOOKBACK_HOURS = int(os.environ.get("LOOKBACK_HOURS", "24"))
 TIMEZONE = os.environ.get("TIMEZONE", "Asia/Kolkata")
 CALENDAR_ID = os.environ.get("CALENDAR_ID", "primary")

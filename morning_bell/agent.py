@@ -11,27 +11,28 @@ import requests
 from . import config
 from .tools import TOOL_SCHEMAS, ToolBox
 
-SYSTEM_PROMPT = """You are Morning Bell, an assistant that turns a college student's emails into schedule updates.
+SYSTEM_PROMPT = """You are Morning Bell, an assistant that turns the user's Gmail into a daily report and calendar alerts.
 
 Today is {today} ({tz}).
+Next 14 days (use these exact weekday/date pairs): {upcoming}
 
 Your job, every morning:
-1. Call search_college_emails to list new college emails.
-2. For every email that could affect the student's schedule (classes, timetable changes, reschedules,
-   cancellations, exams, quizzes, labs, viva, assignment/project deadlines, fee or registration deadlines,
-   college events), call read_email to get the full text. Skip obvious newsletters/ads.
-3. For each concrete dated item, call create_calendar_event. Resolve relative dates ("tomorrow",
-   "next Monday") against today's date. Use local time {tz}. If an email gives a date but no time,
-   use 09:00-09:30 for events and 23:00-23:30 for deadlines (unless a time is stated). For a cancellation,
-   create a short event titled with the cancelled class at its original slot (category "cancellation").
-   For a reschedule, create the event at the NEW time (category "reschedule").
-4. Finally call send_morning_digest exactly once with every item you found, sorted by date — including
-   notices that have no date (added_to_calendar=false).
+1. Call search_emails to list every email from the last 24 hours.
+2. Call read_email for emails whose snippet is not enough to summarize them or that may contain a date,
+   time, deadline, booking, payment due or request for action (personal, college/work, finance, travel,
+   appointments, invitations). Do NOT open promotions, newsletters or social notifications.
+3. For each concrete future dated item, call create_calendar_event (meetings, classes, exams, interviews,
+   appointments, bill or assignment deadlines, travel, events/invitations). Resolve relative dates
+   ("tomorrow", "next Monday") against today's date, in {tz}. If a date has no time, use 09:00-09:30 for
+   events and 23:00-23:30 for deadlines. Never add sale or offer expiry dates.
+4. Finally call send_daily_report exactly once. Put EVERY email from search_emails in 'emails' with a
+   one-sentence summary and a category. Use "important" only for mail that truly matters today (money,
+   security, deadlines, direct personal requests). List anything the user must do in action_items.
 
 Rules: the ONLY way to put something on the calendar is calling create_calendar_event — one call per item,
-and all of them BEFORE send_morning_digest. Never say an event was added unless that tool returned
-"created" or "already on calendar". Never invent dates, times or rooms that are not in the emails. Do not add items that are already
-in the past. When everything is done, reply with a short plain-text summary for the console."""
+all BEFORE send_daily_report. Never say an event was added unless that tool returned "created" or
+"already on calendar". Never invent dates, times, amounts or places that are not in the emails. Skip items
+already in the past. When everything is done, reply with a short plain-text summary for the console."""
 
 
 class SarvamClient:
@@ -65,13 +66,16 @@ class SarvamClient:
 
 def run(backend, verbose: bool = True) -> str:
     tz = ZoneInfo(config.TIMEZONE)
-    today = datetime.now(tz).strftime("%A, %d %B %Y, %H:%M")
+    now = datetime.now(tz)
+    today = now.strftime("%A, %d %B %Y, %H:%M")
+    from datetime import timedelta
+    upcoming = ", ".join((now + timedelta(days=i)).strftime("%a %d %b") for i in range(1, 15))
     toolbox = ToolBox(backend)
     llm = SarvamClient()
 
     messages: list[dict] = [
-        {"role": "system", "content": SYSTEM_PROMPT.format(today=today, tz=config.TIMEZONE)},
-        {"role": "user", "content": "Good morning! Check my college email and update my schedule."},
+        {"role": "system", "content": SYSTEM_PROMPT.format(today=today, tz=config.TIMEZONE, upcoming=upcoming)},
+        {"role": "user", "content": "Good morning! Summarize my email from the last day and update my calendar."},
     ]
     digest_sent = False
 
@@ -88,7 +92,7 @@ def run(backend, verbose: bool = True) -> str:
         if not tool_calls:
             if not digest_sent and step < config.MAX_AGENT_STEPS - 1:
                 # Nudge once if the model stopped before sending the digest.
-                messages.append({"role": "user", "content": "You have not called send_morning_digest yet. Please finish the job."})
+                messages.append({"role": "user", "content": "You have not called send_daily_report yet. Please finish the job."})
                 continue
             return (msg.get("content") or "").strip()
 
@@ -100,7 +104,7 @@ def run(backend, verbose: bool = True) -> str:
                 if not isinstance(args, dict):
                     raise ValueError("arguments must be a JSON object")
                 result = toolbox.call(name, args)
-                if name == "send_morning_digest" and "error" not in result:
+                if name == "send_daily_report" and "error" not in result:
                     digest_sent = True
             except Exception as exc:  # report errors back to the model so it can recover
                 result = {"error": f"{type(exc).__name__}: {exc}"}

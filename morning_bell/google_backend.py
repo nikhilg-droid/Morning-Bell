@@ -70,22 +70,33 @@ class GoogleBackend:
         return self._label_id
 
     def search_emails(self, query: str, max_results: int) -> list[dict]:
-        resp = self.gmail.users().messages().list(
-            userId="me", q=query, maxResults=max_results
-        ).execute()
+        found, page = [], None
+        while len(found) < max_results:
+            resp = self.gmail.users().messages().list(
+                userId="me", q=query, maxResults=min(100, max_results - len(found)), pageToken=page
+            ).execute()
+            found += resp.get("messages", [])
+            page = resp.get("nextPageToken")
+            if not page:
+                break
         out = []
-        for m in resp.get("messages", []):
+        for m in found:
             msg = self.gmail.users().messages().get(
                 userId="me", id=m["id"], format="metadata",
                 metadataHeaders=["From", "Subject", "Date"],
             ).execute()
             headers = {h["name"]: h["value"] for h in msg["payload"].get("headers", [])}
+            labels = msg.get("labelIds", [])
+            gmail_tab = next((l.split("_", 1)[1].lower() for l in labels if l.startswith("CATEGORY_")), "")
             out.append({
                 "id": m["id"],
                 "from": headers.get("From", ""),
                 "subject": headers.get("Subject", ""),
                 "date": headers.get("Date", ""),
-                "snippet": unescape(msg.get("snippet", "")),
+                "gmail_tab": gmail_tab,
+                "important": "IMPORTANT" in labels,
+                "unread": "UNREAD" in labels,
+                "snippet": unescape(msg.get("snippet", ""))[:220],
             })
         return out
 
@@ -153,7 +164,7 @@ class GoogleBackend:
 
 
 class DemoBackend:
-    """Offline stand-in: sample college emails, prints instead of writing to Google."""
+    """Offline stand-in: sample emails, prints instead of writing to Google."""
 
     def __init__(self) -> None:
         from .sample_emails import build
@@ -163,7 +174,9 @@ class DemoBackend:
 
     def search_emails(self, query: str, max_results: int) -> list[dict]:
         return [
-            {k: e[k] for k in ("id", "from", "subject", "date")} | {"snippet": e["body"][:140]}
+            {k: e[k] for k in ("id", "from", "subject", "date")}
+            | {"gmail_tab": e.get("tab", "primary"), "important": e.get("important", False), "unread": True,
+               "snippet": e["body"][:220]}
             for e in list(self.emails.values())[:max_results]
         ]
 
@@ -174,7 +187,7 @@ class DemoBackend:
 
     def find_event(self, title: str, start_iso: str) -> dict | None:
         for ev in self.events:
-            if ev["summary"].lower() == title.lower() and ev["start"].get("dateTime", "").startswith(start_iso[:16]):
+            if ev["summary"].lower().endswith(title.lower()) and ev["start"].get("dateTime", "").startswith(start_iso[:16]):
                 return ev
         return None
 

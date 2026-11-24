@@ -1,4 +1,4 @@
-"""Realistic sample college emails for demo mode. Dates are relative to today."""
+"""Realistic sample emails (college + personal) for demo mode. Dates are relative to today."""
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -46,5 +46,43 @@ def build() -> list[dict]:
             "id": "demo-006", "from": "Library <library@college.edu>", "date": sent,
             "subject": "New e-journals available",
             "body": "The library has added access to 40 new IEEE e-journals. Log in with your college ID to browse.",
+            "tab": "updates",
+        },
+        {
+            "id": "demo-007", "from": "HDFC Bank <alerts@hdfcbank.net>", "date": sent, "important": True,
+            "subject": "Credit card statement - payment due",
+            "body": f"Your credit card statement is ready. Total amount due: Rs 8,450. Minimum due: Rs 500. "
+                    f"Payment due date: {d(5)}. Pay on time to avoid late fees.",
+            "tab": "updates",
+        },
+        {
+            "id": "demo-008", "from": "Rahul Sharma <rahul.sharma98@gmail.com>", "date": sent,
+            "subject": "Dinner this weekend?",
+            "body": f"Hey! A few of us are meeting for dinner at Barbeque Nation, Koramangala on {d(4)} at 8 PM. "
+                    "Can you make it? Let me know by tomorrow so I can book the table.",
+        },
+        {
+            "id": "demo-009", "from": "Amazon.in <shipment-tracking@amazon.in>", "date": sent,
+            "subject": "Your package will be delivered tomorrow",
+            "body": "Your order of boAt Rockerz 450 headphones has shipped and will arrive tomorrow by 9 PM.",
+            "tab": "updates",
+        },
+        {
+            "id": "demo-010", "from": "Google <no-reply@accounts.google.com>", "date": sent, "important": True,
+            "subject": "Security alert: new sign-in on Windows",
+            "body": "Your Google Account was just signed in to from a new Windows device. If this was you, you don't "
+                    "need to do anything. If not, we'll help you secure your account.",
+        },
+        {
+            "id": "demo-011", "from": "Swiggy <offers@swiggy.in>", "date": sent,
+            "subject": "Flat 60% off on your next 3 orders!",
+            "body": "Use code HUNGRY60 to get 60% off. Offer valid till Sunday midnight. Order now!",
+            "tab": "promotions",
+        },
+        {
+            "id": "demo-012", "from": "LinkedIn <jobs-noreply@linkedin.com>", "date": sent,
+            "subject": "10 new jobs for 'Data Analyst Intern'",
+            "body": "New jobs matching your preferences: Data Analyst Intern at Flipkart, Zomato, Razorpay and 7 more.",
+            "tab": "social",
         },
     ]
