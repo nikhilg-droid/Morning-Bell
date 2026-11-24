@@ -1,12 +1,19 @@
 """Run:  python -m morning_bell          (real Gmail + Google Calendar)
         python -m morning_bell --demo   (sample emails, nothing written to Google)"""
 import argparse
+import sys
 import json
 
 from . import agent
 
 
 def main() -> None:
+    # Windows consoles may not support emoji; never crash on printing.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     parser = argparse.ArgumentParser(prog="morning_bell", description="Turn college email into calendar alerts.")
     parser.add_argument("--demo", action="store_true", help="use sample emails; don't touch Google")
     parser.add_argument("--quiet", action="store_true", help="don't print each tool call")

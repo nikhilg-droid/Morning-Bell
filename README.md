@@ -48,12 +48,15 @@ python -m venv .venv
 ```bash
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 ```
+On Windows, use `py` (or `python`) for the commands below; it may print warnings about Scripts not
+on PATH, which are safe to ignore.
 ```bash
 pip install -r requirements.txt
 ```
 ```bash
-cp .env.example .env           # then edit .env
+cp .env.example .env           # Windows Command Prompt: copy .env.example .env
 ```
+Then open `.env` in a text editor (Windows: `notepad .env`).
 
 Put your Sarvam key in `.env` (`SARVAM_API_KEY=...`, from https://dashboard.sarvam.ai) and set
 `COLLEGE_QUERY` to match your college, e.g. `from:(@nitk.edu.in)` or `label:college`.
