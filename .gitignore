@@ -1,0 +1,6 @@
+.env
+credentials.json
+token.json
+demo_digest.html
+__pycache__/
+.venv/
